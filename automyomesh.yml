@@ -1,0 +1,37 @@
+name: DL-Cardiac-Seg
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+
+  # ==========================================
+  # Deep Learning & Math Core
+  # ==========================================
+  - tensorflow=2.18.0
+  - keras=3.11.2
+  - numpy=2.2.5
+  - scipy=1.16.0
+  - h5py=3.13.0
+
+  # ==========================================
+  # Processamento de Imagens Médicas
+  # ==========================================
+  - nibabel=5.3.2
+  - scikit-image=0.25.2
+  - scikit-learn=1.7.1
+  - opencv=4.11.0
+  - pydicom=3.0.1
+  - pillow=11.3.0
+
+  # ==========================================
+  # Análise de Dados e Visualização
+  # ==========================================
+  - pandas=2.3.2
+  - matplotlib=3.10.5
+
+  # ==========================================
+  # Aceleração de Hardware (Opcional)
+  # ==========================================
+  - cuda-toolkit=12.4.1
+  - cudnn=9.3.0.75
