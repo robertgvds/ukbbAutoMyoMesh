@@ -27,6 +27,3 @@ bin/
 cmake-build-release/
 cmake_install.cmake
 hexa-mesh-from-VTK_vtk9
-
-ukbb_model/trained_model
-ukbb_model/third_party

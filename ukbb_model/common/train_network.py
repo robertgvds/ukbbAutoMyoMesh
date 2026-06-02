@@ -24,7 +24,7 @@ from ukbb_cardiac.common.image_utils import crop_image, rescale_intensity, data_
 
 
 """ Parameters """
-FLAGS = tf.app.flags.FLAGS
+""""FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_enum('seq_name', 'sa',
                          ['sa', 'la_2ch', 'la_4ch'],
                          'Sequence name.')
@@ -52,6 +52,36 @@ tf.app.flags.DEFINE_string('log_dir',
 tf.app.flags.DEFINE_string('checkpoint_dir',
                            '/vol/bitbucket/wbai/ukbb_cardiac/model',
                            'Directory for saving the trained model.')
+""""
+
+""" Parameters """
+FLAGS = tf.app.flags.FLAGS
+tf.app.flags.DEFINE_enum('seq_name', 'sa',
+                         ['sa', 'la_2ch', 'la_4ch'],
+                         'Sequence name.')
+
+tf.app.flags.DEFINE_string('model_path',
+                           'ukbb_model/trained_model/FCN_sa',
+                           'Path to the pre-trained model for fine-tuning.')
+
+tf.app.flags.DEFINE_integer('image_size', 192,
+                            'Image size after cropping.')
+tf.app.flags.DEFINE_integer('train_batch_size', 2,
+                            'Number of images for each training batch.')
+tf.app.flags.DEFINE_integer('validation_batch_size', 2,
+                            'Number of images for each validation batch.')
+
+# Como são poucos dados, 50000 vai decorar as imagens. 2000 é o ideal para testar
+tf.app.flags.DEFINE_integer('train_iteration', 2000,
+                            'Number of training iterations.')
+tf.app.flags.DEFINE_integer('num_filter', 16,
+                            'Number of filters for the first convolution layer.')
+tf.app.flags.DEFINE_integer('num_level', 5,
+                            'Number of network levels.')
+
+# Taxa bem menor para não destruir os pesos que a rede já aprendeu
+tf.app.flags.DEFINE_float('learning_rate', 1e-5,
+                          'Learning rate.')
 
 
 def get_random_batch(filename_list, batch_size, image_size=192, data_augmentation=False,
@@ -247,8 +277,28 @@ def main(argv=None):
         train_writer = tf.summary.FileWriter(os.path.join(summary_dir, 'train'), graph=sess.graph)
         validation_writer = tf.summary.FileWriter(os.path.join(summary_dir, 'validation'), graph=sess.graph)
 
-        # Initialise variables
+        # Initialise variables (Inicializa os pesos aleatórios)
         sess.run(tf.global_variables_initializer())
+
+        # ==========================================================
+        # CÓDIGO NOVO: CARREGANDO OS PESOS DO UK BIOBANK (FCN_sa)
+        # ==========================================================
+        if FLAGS.model_path:
+            print(f"🔄 Restaurando pesos do modelo base: {FLAGS.model_path}")
+            # Pega as variáveis da rede original
+            var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+            
+            # Filtra variáveis do otimizador Adam (que devem começar do zero)
+            var_list = [v for v in var_list if 'Adam' not in v.name]
+            
+            saver_restore = tf.train.Saver(var_list=var_list)
+            try:
+                saver_restore.restore(sess, FLAGS.model_path)
+                print("✅ Pesos antigos restaurados com sucesso! Iniciando Fine-Tuning...")
+            except Exception as e:
+                print(f"❌ Erro ao restaurar o modelo. Verifique se o caminho está correto.\nDetalhes: {e}")
+                exit(1)
+        # ==========================================================
 
         # Iterate
         for iteration in range(1, 1 + FLAGS.train_iteration):
@@ -260,8 +310,11 @@ def main(argv=None):
                                               FLAGS.train_batch_size,
                                               image_size=FLAGS.image_size,
                                               data_augmentation=True,
-                                              shift=0, rotate=10, scale=0.2,
-                                              intensity=0, flip=False)
+                                              shift=10.0,    # Aumentado
+                                              rotate=25.0,   # Rotação maior
+                                              scale=0.3,     # Zoom in/out maior
+                                              intensity=0.1, # Variação de brilho e contraste
+                                              flip=True)     # Ativado (Espelhamento vertical/horizontal)
 
             # Stochastic optimisation using this batch
             _, train_loss, train_acc = sess.run([train_op, loss, accuracy],
