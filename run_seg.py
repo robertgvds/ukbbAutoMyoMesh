@@ -8,7 +8,7 @@ from datetime import datetime
 # =====================================================================
 # ⚙️ CONFIGURAÇÕES PADRÃO (Para uso direto no código)
 # =====================================================================
-DEFAULT_INPUT_FILEPATH = "/home/robert/dev/research/DL-Cardiac-Segmentation/AutoMyoMesh/input/2/sa_corrigido.nii.gz"
+DEFAULT_INPUT_FILEPATH = "input/niftis_extraidos/Patient_2_img.nii.gz"
 DEFAULT_PROCESS_SEQ = False 
 
 # Caminhos relativos padrão do projeto

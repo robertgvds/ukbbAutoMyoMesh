@@ -6,27 +6,25 @@ import nibabel as nib
 from skimage.draw import polygon
 from typing import Tuple, Any
 
-# =====================================================================
-# ⚙️ CONFIGURAÇÕES PADRÃO E CONSTANTES
-# =====================================================================
+# DEFAULT CONFIGURATIONS AND CONSTANTS
 DEFAULT_INPUT_DIR = "input/mats_originais" 
-DEFAULT_OUTPUT_DIR = "output/niftis_extraidos" 
+DEFAULT_OUTPUT_DIR = "output/niftis_extraidos"
 
-# Rótulos das segmentações anatômicas
-LABEL_ENDO_LV = 1  # Endocárdio Ventrículo Esquerdo (Vermelho)
-LABEL_EPI_LV = 2   # Epicárdio Ventrículo Esquerdo (Verde)
-LABEL_ENDO_RV = 3  # Endocárdio Ventrículo Direito (Magenta)
-LABEL_SCAR = 1     # Fibrose
+# Labels for anatomical segmentations
+LABEL_ENDO_LV = 1  # Left Ventricle Endocardium (Red)
+LABEL_EPI_LV = 2   # Left Ventricle Epicardium (Green)
+LABEL_ENDO_RV = 3  # Right Ventricle Endocardium (Magenta)
+LABEL_SCAR = 1     # Scar / Fibrosis
 
 def extract_image(mat_data: Any, patient_name: str, output_dir: str) -> Tuple[int, int]:
     """
-    Procura a imagem bruta dentro dos dados do .MAT, salva como NIfTI 
-    e retorna o formato da fatia (X, Y) para ser usado nas segmentações.
+    Searches for the raw image inside the .MAT data, saves it as NIfTI,
+    and returns the slice shape (X, Y) to be used in segmentations.
     """
     raw_image = None
-    slice_shape = (256, 256) # Tamanho padrão caso não encontre a imagem
+    slice_shape = (256, 256) # Default size if image is not found
     
-    # Verifica onde a imagem está armazenada na estrutura do .MAT
+    # Check where the image is stored in the .MAT structure
     if 'im' in mat_data and hasattr(mat_data['im'], 'shape') and mat_data['im'].size > 0:
         raw_image = mat_data['im']
     elif 'setstruct' in mat_data and hasattr(mat_data['setstruct'], 'IM') and mat_data['setstruct'].IM.size > 0:
@@ -34,20 +32,20 @@ def extract_image(mat_data: Any, patient_name: str, output_dir: str) -> Tuple[in
 
     if raw_image is not None:
         slice_shape = raw_image.shape[:2]
-        print(f"   -> 🖼️ Imagem encontrada. Formato real: {raw_image.shape}")
+        print(f"   -> Image found. Real shape: {raw_image.shape}")
         
         output_filepath = os.path.join(output_dir, f"{patient_name}_img.nii.gz")
         nifti_img = nib.Nifti1Image(raw_image, np.eye(4))
         nib.save(nifti_img, output_filepath)
     else:
-        print("   -> ⚠️ Imagem não encontrada. A gerar apenas as segmentações.")
+        print("   -> Image not found. Generating segmentations only.")
         
     return slice_shape
 
 def get_coordinates(setstruct: Any, attr_name: str, z: int, t: int) -> Any:
     """
-    Função auxiliar para extrair as coordenadas X ou Y de uma estrutura, 
-    lidando com as diferenças entre dados 3D (z) e 4D (z, t).
+    Helper function to extract X or Y coordinates from a structure,
+    handling the differences between 3D (z) and 4D (z, t) data.
     """
     if not hasattr(setstruct, attr_name): 
         return None
@@ -64,12 +62,12 @@ def get_coordinates(setstruct: Any, attr_name: str, z: int, t: int) -> Any:
 def draw_mask_polygon(mask: np.ndarray, x_coords: np.ndarray, y_coords: np.ndarray, 
                       label: int, slice_shape: Tuple[int, int], mask_idx: tuple) -> None:
     """
-    Desenha o polígono na máscara se houver coordenadas válidas suficientes.
+    Draws the polygon on the mask if there are enough valid coordinates.
     """
     if x_coords is not None and y_coords is not None:
         valid_points = ~np.isnan(x_coords)
         if np.sum(valid_points) > 3:
-            # Subtrai 1 para converter do formato MATLAB (base 1) para Python (base 0)
+            # Subtract 1 to convert from MATLAB format (1-based) to Python format (0-based)
             cx = np.round(x_coords[valid_points]).astype(int) - 1
             cy = np.round(y_coords[valid_points]).astype(int) - 1
             
@@ -78,8 +76,8 @@ def draw_mask_polygon(mask: np.ndarray, x_coords: np.ndarray, y_coords: np.ndarr
 
 def extract_segmentations(mat_data: Any, patient_name: str, slice_shape: Tuple[int, int], output_dir: str) -> None:
     """
-    Extrai as segmentações anatômicas e de fibrose, desenha os polígonos 
-    em matrizes vazias e salva como arquivos NIfTI.
+    Extracts anatomical and scar segmentations, draws the polygons
+    in empty matrices, and saves them as NIfTI files.
     """
     if 'setstruct' not in mat_data:
         return
@@ -91,9 +89,9 @@ def extract_segmentations(mat_data: Any, patient_name: str, slice_shape: Tuple[i
         num_slices = coords_shape[1] if len(coords_shape) > 1 else 1
         num_frames = coords_shape[2] if len(coords_shape) > 2 else 1
         
-        print(f"   -> ⏱️ Detectados {num_slices} Fatias (Z) e {num_frames} Frames (T).")
+        print(f"   -> Detected {num_slices} Slices (Z) and {num_frames} Frames (T).")
         
-        # Define o formato do array dependendo se é 3D ou 4D
+        # Define the array shape depending on whether it is 3D or 4D
         if num_frames > 1:
             mask_shape = (slice_shape[0], slice_shape[1], num_slices, num_frames)
         else:
@@ -102,27 +100,27 @@ def extract_segmentations(mat_data: Any, patient_name: str, slice_shape: Tuple[i
         anat_seg = np.zeros(mask_shape, dtype=np.uint8)
         scar_seg = np.zeros(mask_shape, dtype=np.uint8)
 
-        # Loop pelas dimensões de Tempo (T) e Fatias (Z)
+        # Loop through Time (T) and Slices (Z) dimensions
         for t in range(num_frames):
             for z in range(num_slices):
                 mask_idx = (slice(None), slice(None), z, t) if num_frames > 1 else (slice(None), slice(None), z)
 
-                # A. Epicárdio LV
+                # A. LV Epicardium
                 epi_x = get_coordinates(setstruct, 'EpiX', z, t)
                 epi_y = get_coordinates(setstruct, 'EpiY', z, t)
                 draw_mask_polygon(anat_seg, epi_x, epi_y, LABEL_EPI_LV, slice_shape, mask_idx)
 
-                # B. Endocárdio LV
+                # B. LV Endocardium
                 endo_x = get_coordinates(setstruct, 'EndoX', z, t)
                 endo_y = get_coordinates(setstruct, 'EndoY', z, t)
                 draw_mask_polygon(anat_seg, endo_x, endo_y, LABEL_ENDO_LV, slice_shape, mask_idx)
 
-                # C. Endocárdio RV
+                # C. RV Endocardium
                 rv_x = get_coordinates(setstruct, 'RVEndoX', z, t)
                 rv_y = get_coordinates(setstruct, 'RVEndoY', z, t)
                 draw_mask_polygon(anat_seg, rv_x, rv_y, LABEL_ENDO_RV, slice_shape, mask_idx)
 
-        # D. Extrair as Fibroses (Roi)
+        # D. Extract Scar / Fibrosis (Roi)
         if hasattr(setstruct, 'Roi'):
             rois = setstruct.Roi
             if not isinstance(rois, np.ndarray): 
@@ -130,7 +128,7 @@ def extract_segmentations(mat_data: Any, patient_name: str, slice_shape: Tuple[i
             
             for roi in rois:
                 try:
-                    # Converte de base 1 (MATLAB) para base 0 (Python)
+                    # Convert from 1-based (MATLAB) to 0-based (Python)
                     z_roi = int(roi.Z) - 1 if hasattr(roi, 'Z') else 0
                     t_roi = int(roi.T) - 1 if hasattr(roi, 'T') else 0
                     
@@ -144,17 +142,17 @@ def extract_segmentations(mat_data: Any, patient_name: str, slice_shape: Tuple[i
                 except Exception:
                     pass
 
-        # Salva os arquivos processados
+        # Save the processed files
         nib.save(nib.Nifti1Image(anat_seg, np.eye(4)), os.path.join(output_dir, f"{patient_name}_seg_anat.nii.gz"))
         nib.save(nib.Nifti1Image(scar_seg, np.eye(4)), os.path.join(output_dir, f"{patient_name}_seg_scar.nii.gz"))
-        print("   -> 🧠 Segmentações salvas! Anatomia e Fibroses posicionadas corretamente.")
+        print("   -> Segmentations saved! Anatomy and scar correctly positioned.")
 
 def process_mat_files(input_dir: str, output_dir: str) -> None:
     """
-    Função principal que orquestra a leitura da pasta e o processamento de cada arquivo.
+    Main function that orchestrates reading the folder and processing each file.
     """
     print("=" * 51)
-    print("🚀 Convertendo .MAT (4D, Multi-Classes e Fibroses)")
+    print("Converting .MAT (4D, Multi-Class and Scar)")
     print("=" * 51)
 
     os.makedirs(output_dir, exist_ok=True)
@@ -162,18 +160,18 @@ def process_mat_files(input_dir: str, output_dir: str) -> None:
 
     for mat_filepath in mat_files:
         patient_name = os.path.basename(mat_filepath).replace('.mat', '')
-        print(f"\n📂 Analisando: {patient_name}")
+        print(f"\nAnalyzing: {patient_name}")
 
         mat_data = sio.loadmat(mat_filepath, squeeze_me=True, struct_as_record=False)
         
-        # 1. Extrai a imagem e descobre o tamanho da fatia (shape)
+        # 1. Extract the image and find the slice shape
         slice_shape = extract_image(mat_data, patient_name, output_dir)
         
-        # 2. Usa o tamanho da fatia para criar e extrair as segmentações
+        # 2. Use the slice shape to create and extract the segmentations
         extract_segmentations(mat_data, patient_name, slice_shape, output_dir)
 
     print("\n" + "=" * 88)
-    print("✅ Processo Finalizado com sucesso!")
+    print("Process finished successfully!")
     print("=" * 88)
 
 if __name__ == "__main__":
