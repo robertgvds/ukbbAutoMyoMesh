@@ -52,7 +52,7 @@ tf.app.flags.DEFINE_string('log_dir',
 tf.app.flags.DEFINE_string('checkpoint_dir',
                            '/vol/bitbucket/wbai/ukbb_cardiac/model',
                            'Directory for saving the trained model.')
-""""
+"""
 
 """ Parameters """
 FLAGS = tf.app.flags.FLAGS
