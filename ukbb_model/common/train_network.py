@@ -22,66 +22,39 @@ from ukbb_cardiac.common.network import build_FCN
 from ukbb_cardiac.common.image_utils import tf_categorical_accuracy, tf_categorical_dice
 from ukbb_cardiac.common.image_utils import crop_image, rescale_intensity, data_augmenter
 
-
-""" Parameters """
-""""FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_enum('seq_name', 'sa',
-                         ['sa', 'la_2ch', 'la_4ch'],
-                         'Sequence name.')
-tf.app.flags.DEFINE_integer('image_size', 192,
-                            'Image size after cropping.')
-tf.app.flags.DEFINE_integer('train_batch_size', 2,
-                            'Number of images for each training batch.')
-tf.app.flags.DEFINE_integer('validation_batch_size', 2,
-                            'Number of images for each validation batch.')
-tf.app.flags.DEFINE_integer('train_iteration', 50000,
-                            'Number of training iterations.')
-tf.app.flags.DEFINE_integer('num_filter', 16,
-                            'Number of filters for the first convolution layer.')
-tf.app.flags.DEFINE_integer('num_level', 5,
-                            'Number of network levels.')
-tf.app.flags.DEFINE_float('learning_rate', 1e-3,
-                          'Learning rate.')
-tf.app.flags.DEFINE_string('dataset_dir',
-                           '/vol/medic02/users/wbai/data/cardiac_atlas/UKBB_2964/sa',
-                           'Path to the dataset directory, which is split into '
-                           'training, validation and test subdirectories.')
-tf.app.flags.DEFINE_string('log_dir',
-                           '/vol/bitbucket/wbai/ukbb_cardiac/log',
-                           'Directory for saving the log file.')
-tf.app.flags.DEFINE_string('checkpoint_dir',
-                           '/vol/bitbucket/wbai/ukbb_cardiac/model',
-                           'Directory for saving the trained model.')
-"""
-
 """ Parameters """
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_enum('seq_name', 'sa',
                          ['sa', 'la_2ch', 'la_4ch'],
                          'Sequence name.')
-
-tf.app.flags.DEFINE_string('model_path',
-                           'ukbb_model/trained_model/FCN_sa',
-                           'Path to the pre-trained model for fine-tuning.')
-
 tf.app.flags.DEFINE_integer('image_size', 192,
                             'Image size after cropping.')
 tf.app.flags.DEFINE_integer('train_batch_size', 2,
                             'Number of images for each training batch.')
 tf.app.flags.DEFINE_integer('validation_batch_size', 2,
                             'Number of images for each validation batch.')
-
-# Como são poucos dados, 50000 vai decorar as imagens. 2000 é o ideal para testar
 tf.app.flags.DEFINE_integer('train_iteration', 2000,
                             'Number of training iterations.')
 tf.app.flags.DEFINE_integer('num_filter', 16,
                             'Number of filters for the first convolution layer.')
 tf.app.flags.DEFINE_integer('num_level', 5,
                             'Number of network levels.')
-
-# Taxa bem menor para não destruir os pesos que a rede já aprendeu
 tf.app.flags.DEFINE_float('learning_rate', 1e-5,
                           'Learning rate.')
+tf.app.flags.DEFINE_string('dataset_dir',
+                           '/vol/medic02/users/wbai/data/cardiac_atlas/UKBB_2964/sa',
+                           'Path to the dataset directory.')
+tf.app.flags.DEFINE_string('log_dir',
+                           '/vol/bitbucket/wbai/ukbb_cardiac/log',
+                           'Directory for saving the log file.')
+tf.app.flags.DEFINE_string('checkpoint_dir',
+                           '/vol/bitbucket/wbai/ukbb_cardiac/model',
+                           'Directory for saving the trained model.')
+
+# A NOSSA FLAG ADICIONAL DO MODELO PRÉ-TREINADO:
+tf.app.flags.DEFINE_string('model_path',
+                           'ukbb_model/trained_model/FCN_sa',
+                           'Path to the pre-trained model for fine-tuning.')
 
 
 def get_random_batch(filename_list, batch_size, image_size=192, data_augmentation=False,
