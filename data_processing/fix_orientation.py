@@ -2,6 +2,7 @@ import os
 import glob
 import argparse
 import nibabel as nib
+import nibabel.processing
 from datetime import datetime
 
 # =====================================================================
@@ -16,27 +17,19 @@ DEFAULT_TARGET_DIR = "output/niftis_extraidos"
 # A pasta onde os NIfTIs consertados serão salvos
 DEFAULT_OUTPUT_DIR = "output/niftis_corrigidos" 
 
+
 def transfer_metadata_to_file(reference_nifti: nib.Nifti1Image, target_filepath: str, output_dir: str) -> None:
-    """
-    Recebe os metadados carregados da referência e aplica a um único arquivo alvo.
-    """
     filename = os.path.basename(target_filepath)
-    
-    # Lê a imagem que está com a matriz quebrada (alvo)
     target_nifti = nib.load(target_filepath)
     
-    # Cria uma nova imagem com os pixels do alvo, mas Affine/Header da referência
-    corrected_nifti = nib.Nifti1Image(
-        target_nifti.get_fdata(), 
-        reference_nifti.affine, 
-        reference_nifti.header
-    )
+    # EM VEZ DE COPIAR O HEADER, NÓS ROTACIONAMOS E REINTERPOLAMOS OS PIXELS
+    print(f"  -> Reinterpolando pixels 3D para {filename}...")
+    resampled_nifti = nibabel.processing.resample_from_to(target_nifti, reference_nifti)
     
-    # Mantemos o mesmo nome do arquivo original, já que ele vai para uma pasta nova e limpa
     output_filepath = os.path.join(output_dir, filename)
-    nib.save(corrected_nifti, output_filepath)
+    nib.save(resampled_nifti, output_filepath)
     
-    print(f"  -> ✅ Corrigido: {filename}")
+    print(f"  -> ✅ Corrigido fisicamente: {filename}")
 
 def process_directory(reference_filepath: str, target_dir: str, output_dir: str) -> None:
     """

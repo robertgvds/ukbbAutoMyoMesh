@@ -12,6 +12,7 @@ DEFAULT_INPUT_FILEPATH = "input/niftis_extraidos/Patient_2_img.nii.gz"
 DEFAULT_PROCESS_SEQ = False 
 
 # Caminhos relativos padrão do projeto
+#RELATIVE_MODEL_PATH = "new_model/FCN_sa_level5_filter16_22333_batch1_iter2000_lr1e-05/FCN_sa_level5_filter16_22333_batch1_iter2000_lr1e-05.ckpt-2000"
 RELATIVE_MODEL_PATH = "ukbb_model/trained_model/FCN_sa"
 RELATIVE_DEPLOY_SCRIPT = "ukbb_model/common/deploy_network.py"
 

@@ -72,7 +72,7 @@ def execute_training(dataset_dir: str, output_dir: str, iterations: int, project
     absolute_model_path = os.path.join(project_root, RELATIVE_MODEL_PATH)
     
     train_command = [
-        "python", absolute_train_script, # Usando 'python' genérico (funciona no Win/Linux/Kaggle)
+        "python", absolute_train_script,
         "--dataset_dir", dataset_dir,
         "--checkpoint_dir", output_dir,
         "--model_path", absolute_model_path,
@@ -83,7 +83,7 @@ def execute_training(dataset_dir: str, output_dir: str, iterations: int, project
     environment_vars = os.environ.copy()
     environment_vars["CUDA_VISIBLE_DEVICES"] = "0"
     environment_vars["TF_CPP_MIN_LOG_LEVEL"] = "2"
-    environment_vars["TF_USE_LEGACY_KERAS"] = "1" # A mágica que resolve o erro do Keras 3!
+    environment_vars["TF_USE_LEGACY_KERAS"] = "1"
     
     if "PYTHONPATH" in environment_vars:
         environment_vars["PYTHONPATH"] = f"{project_root}:{environment_vars['PYTHONPATH']}"
@@ -111,7 +111,7 @@ def run_pipeline(dataset_filepath: str, output_filepath: str, iterations: int) -
     absolute_output_path = os.path.abspath(output_filepath)
     
     print("=" * 88)
-    print("🚀 Starting the pipeline for Fine-Tuning AutoMyoMesh.")
+    print("🚀 Starting the pipeline for Fine-Tuning.")
     print(f"🕒 Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"📂 Dataset Dir: {absolute_dataset_path}")
     print(f"💾 Output Dir:  {absolute_output_path}")
@@ -128,7 +128,7 @@ def main() -> None:
     """
     Função principal que gerencia os argumentos de linha de comando.
     """
-    parser = argparse.ArgumentParser(description="Pipeline Wrapper - Fine-Tuning AutoMyoMesh")
+    parser = argparse.ArgumentParser(description="Pipeline Wrapper - Fine-Tuning")
     parser.add_argument("-d", "--dataset", required=False, help="Caminho completo para a pasta do dataset")
     parser.add_argument("-o", "--output", required=False, help="Caminho para a pasta onde salvará os pesos")
     parser.add_argument("-i", "--iters", type=int, required=False, help="Quantidade de iterações de treino")
