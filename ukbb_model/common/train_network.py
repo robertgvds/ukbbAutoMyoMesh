@@ -17,10 +17,12 @@ import time
 import random
 import numpy as np
 import nibabel as nib
-import tensorflow as tf
-from ukbb_cardiac.common.network import build_FCN
-from ukbb_cardiac.common.image_utils import tf_categorical_accuracy, tf_categorical_dice
-from ukbb_cardiac.common.image_utils import crop_image, rescale_intensity, data_augmenter
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+
+from ukbb_model.common.network import build_FCN
+from ukbb_model.common.image_utils import tf_categorical_accuracy, tf_categorical_dice
+from ukbb_model.common.image_utils import crop_image, rescale_intensity, data_augmenter
 
 """ Parameters """
 FLAGS = tf.app.flags.FLAGS
@@ -44,11 +46,11 @@ tf.app.flags.DEFINE_float('learning_rate', 1e-5,
 tf.app.flags.DEFINE_string('dataset_dir',
                            '/vol/medic02/users/wbai/data/cardiac_atlas/UKBB_2964/sa',
                            'Path to the dataset directory.')
-tf.app.flags.DEFINE_string('log_dir',
-                           '/vol/bitbucket/wbai/ukbb_cardiac/log',
+tf.app.flags.DEFINE_string('log_directory',
+                           '/vol/bitbucket/wbai/ukbb_model/log',
                            'Directory for saving the log file.')
 tf.app.flags.DEFINE_string('checkpoint_dir',
-                           '/vol/bitbucket/wbai/ukbb_cardiac/model',
+                           '/vol/bitbucket/wbai/ukbb_model/model',
                            'Directory for saving the trained model.')
 
 # A NOSSA FLAG ADICIONAL DO MODELO PRÉ-TREINADO:
@@ -71,8 +73,8 @@ def get_random_batch(filename_list, batch_size, image_size=192, data_augmentatio
             print('  Select {0} {1}'.format(image_name, label_name))
 
             # Read image and label
-            image = nib.load(image_name).get_data()
-            label = nib.load(label_name).get_data()
+            image = nib.load(image_name).get_fdata()
+            label = nib.load(label_name).get_fdata()
 
             # Handle exceptions
             if image.shape != label.shape:
